@@ -1,5 +1,7 @@
 # Hardware Network Intrusion Detection Sensor (Hardware IDS)
 
+![Hardware IDS diagram](https://ik.imagekit.io/upgrad1/abroad-images/imageCompo/images/1717656459941_Untitled_design_86_CV69OV.webp?pr-true)
+
 A hardware-based Network Intrusion Detection Sensor is a compact monitoring appliance that passively observes network traffic and looks for malicious activity or abnormal behaviour. Unlike a firewall, which actively blocks traffic, an IDS inspects mirrored traffic without interfering with the network.
 
 This project centers on a Raspberry Pi 5 connected to a managed switch configured with a mirror (SPAN) port. The switch duplicates network traffic and sends a copy to the Pi, allowing the IDS to analyse all packets in real time.
