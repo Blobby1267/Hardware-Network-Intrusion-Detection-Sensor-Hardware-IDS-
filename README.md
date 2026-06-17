@@ -1,6 +1,7 @@
 # Hardware Network Intrusion Detection Sensor (Hardware IDS)
 
 ![Hardware IDS diagram](https://ik.imagekit.io/upgrad1/abroad-images/imageCompo/images/1717656459941_Untitled_design_86_CV69OV.webp?pr-true)
+*Image credit: https://www.knowledgehut.com/blog/security/intrusion-detection-system*
 
 A hardware-based Network Intrusion Detection Sensor is a compact monitoring appliance that passively observes network traffic and looks for malicious activity or abnormal behaviour. Unlike a firewall, which actively blocks traffic, an IDS inspects mirrored traffic without interfering with the network.
 
