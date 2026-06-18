@@ -2,7 +2,15 @@ import sys
 import time
 import warnings
 import os
+import sqlite3
+import datetime
+from pathlib import Path
 from collections import defaultdict, deque
+
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    ZoneInfo = None
 
 try:
     from scapy.all import conf, sniff, IP, ARP, TCP, UDP, DNS, DNSQR, ICMP
@@ -33,10 +41,94 @@ if sys.platform.startswith("linux") and os.path.exists("/proc/cpuinfo"):
 LED_PIN_MAP = {"green": 17, "yellow": 27, "red": 22}
 BUZZER_PIN = 18
 
+# Database configuration
+ROOT_DIR = Path(__file__).resolve().parent
+DB_PATH = ROOT_DIR / "ids_events.db"
+
+
+def get_london_timezone():
+    """Return Europe/London timezone info, falling back to local tz if necessary."""
+    if ZoneInfo is not None:
+        try:
+            return ZoneInfo("Europe/London")
+        except Exception:
+            pass
+    
+    try:
+        import pytz
+        return pytz.timezone("Europe/London")
+    except Exception:
+        return datetime.datetime.now().astimezone().tzinfo
+
+
+def initialize_database():
+    """Create database schema if it doesn't exist"""
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                source TEXT,
+                details TEXT,
+                severity TEXT NOT NULL
+            )
+        """)
+        print(f"Database initialized at {DB_PATH}")
+
+
+def record_event(event_type: str, source: str, details: str, severity: str = "info"):
+    """Record an event to the database"""
+    timestamp = datetime.datetime.now(get_london_timezone()).strftime("%Y-%m-%d %H:%M:%S %Z")
+    
+    with sqlite3.connect(DB_PATH) as connection:
+        connection.execute(
+            "INSERT INTO events (timestamp, event_type, source, details, severity) VALUES (?, ?, ?, ?, ?)",
+            (timestamp, event_type, source, details, severity),
+        )
+    
+    print(f"[{timestamp}] {severity.upper()} {event_type} - {source}: {details}")
+
+
+class StatusTracker:
+    """Tracks overall IDS statistics"""
+    
+    def __init__(self):
+        self.start_time = time.time()
+        self.total_events = 0
+        self.severity_counts = defaultdict(int)
+        self.unique_sources = set()
+        self.last_alert = None
+    
+    def add_event(self, event_type: str, source: str, severity: str):
+        """Record an event in the tracker"""
+        self.total_events += 1
+        self.severity_counts[severity] += 1
+        if source:
+            self.unique_sources.add(source)
+        
+        if severity in {"critical", "warning"}:
+            self.last_alert = {
+                "timestamp": datetime.datetime.now(get_london_timezone()).strftime("%Y-%m-%d %H:%M:%S %Z"),
+                "event_type": event_type,
+                "source": source,
+                "severity": severity,
+            }
+    
+    def summary(self):
+        """Get a summary of current statistics"""
+        return {
+            "total_events": self.total_events,
+            "critical": self.severity_counts.get("critical", 0),
+            "warning": self.severity_counts.get("warning", 0),
+            "info": self.severity_counts.get("info", 0),
+            "unique_sources": len(self.unique_sources),
+            "last_alert": self.last_alert,
+            "uptime_seconds": int(time.time() - self.start_time),
+        }
+
 
 class OLEDDisplay:
-    """Controls a 128x64 OLED display via I2C"""
-    
     def __init__(self):
         self.device = None
         if OLED_AVAILABLE:
@@ -48,7 +140,6 @@ class OLEDDisplay:
                 self.device = None
     
     def show(self, lines):
-        """Display up to 6 lines of text on the OLED"""
         if not self.device:
             return
         
@@ -63,8 +154,6 @@ class OLEDDisplay:
 
 
 class LEDController:
-    """Controls RGB status LEDs"""
-    
     def __init__(self):
         self.leds = {}
         if GPIO_AVAILABLE:
@@ -74,15 +163,12 @@ class LEDController:
                 self.leds = {}
     
     def update(self, severity: str):
-        """Update LED based on severity level"""
         if not self.leds:
             return
         
-        # Turn off all LEDs first
         for led in self.leds.values():
             led.off()
         
-        # Light up appropriate LED
         if severity == "critical":
             self.leds["red"].on()
         elif severity == "warning":
@@ -92,8 +178,6 @@ class LEDController:
 
 
 class BuzzerController:
-    """Controls audio buzzer for alerts"""
-    
     def __init__(self):
         self.buzzer = None
         if GPIO_AVAILABLE:
@@ -103,7 +187,6 @@ class BuzzerController:
                 self.buzzer = None
     
     def buzz(self, duration: float = 0.15):
-        """Sound the buzzer for the specified duration"""
         if not self.buzzer:
             return
         
@@ -115,17 +198,12 @@ class BuzzerController:
 
 
 class HardwareController:
-    """Coordinates all hardware devices"""
-    
     def __init__(self):
         self.display = OLEDDisplay()
         self.status_lights = LEDController()
         self.buzzer = BuzzerController()
     
     def update(self, event_type: str, source: str, details: str, severity: str):
-        """Update all hardware with new alert information"""
-        
-        # Update OLED display
         if self.display.device:
             self.display.show([
                 f"{severity.upper()} {event_type}",
@@ -133,22 +211,20 @@ class HardwareController:
                 details[:28],
             ])
         
-        # Update LED status
         self.status_lights.update(severity)
         
-        # Sound buzzer for critical alerts
         if severity == "critical":
             self.buzzer.buzz(0.25)
 
 
-# Threat detectors (from stage 3)
+# Threat detectors (from stage 4)
 class ArpSpoofDetector:
     def __init__(self):
         self.arp_table = {}
     
     def check(self, packet):
         if not packet.haslayer(ARP):
-            return
+            return None
         
         arp_layer = packet[ARP]
         source_ip = arp_layer.psrc
@@ -303,7 +379,6 @@ class NetworkInspector:
         self.device_detector = UnauthorizedDeviceDetector(allowed_macs=allowed_macs)
     
     def inspect(self, packet):
-        """Run all detectors and return any alerts"""
         alerts = []
         
         if alert := self.arp_detector.check(packet):
@@ -322,15 +397,16 @@ class NetworkInspector:
 
 # Global state
 hardware_controller = HardwareController()
+status_tracker = StatusTracker()
 network_inspector = None
 
 
 def handle_packet(packet):
-    """Process each packet and trigger hardware alerts"""
     try:
         alerts = network_inspector.inspect(packet)
         for alert in alerts:
-            print(f"\n🚨 {alert['type']}: {alert['source']} - {alert['details']}")
+            record_event(alert["type"], alert["source"], alert["details"], alert["severity"])
+            status_tracker.add_event(alert["type"], alert["source"], alert["severity"])
             hardware_controller.update(
                 alert["type"],
                 alert["source"],
@@ -342,14 +418,13 @@ def handle_packet(packet):
 
 
 def run_packet_capture(interface: str = None, allowed_macs: str = ""):
-    """Start packet sniffing with threat detection and hardware feedback"""
-    
     global network_inspector
     
     allowed_macs_set = {mac.strip().upper() for mac in allowed_macs.split(",") if mac.strip()}
     network_inspector = NetworkInspector(allowed_macs=allowed_macs_set)
     
-    print(f"Starting IDS with Hardware Support on {interface or 'default interface'}...")
+    print(f"Starting IDS with Event Logging on {interface or 'default interface'}...")
+    print(f"Database: {DB_PATH}")
     print(f"Hardware Status - OLED: {OLED_AVAILABLE}, GPIO: {GPIO_AVAILABLE}")
     print("Press Ctrl+C to stop.\n")
     
@@ -358,7 +433,6 @@ def run_packet_capture(interface: str = None, allowed_macs: str = ""):
     except RuntimeError as exc:
         error_text = str(exc).lower()
         if "layer 2" in error_text or "winpcap" in error_text or "npcap" in error_text:
-            print("Attempting layer 3 fallback...")
             try:
                 l3_socket = conf.L3socket(iface=interface)
                 sniff(opened_socket=l3_socket, prn=handle_packet, store=False)
@@ -369,6 +443,9 @@ def run_packet_capture(interface: str = None, allowed_macs: str = ""):
 
 
 if __name__ == "__main__":
+    initialize_database()
+    
     interface = sys.argv[1] if len(sys.argv) > 1 else None
     allowed_macs = sys.argv[2] if len(sys.argv) > 2 else ""
+    
     run_packet_capture(interface, allowed_macs)
