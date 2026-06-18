@@ -1,0 +1,231 @@
+body {
+    font-family: Inter, Arial, sans-serif;
+    margin: 0;
+    padding: 24px;
+    background: radial-gradient(circle at top, #1a1d29 0%, #090b11 100%);
+    color: #f2f2f2;
+}
+
+.page-shell {
+    max-width: 1320px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 2.25rem;
+}
+
+.page-header p {
+    margin: 8px 0 0;
+    color: #b8c1d3;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e3e8f0;
+}
+
+.status-pill strong {
+    font-size: 1.4rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    padding: 20px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.summary-card h2 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    color: #9ab2d1;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.summary-card p {
+    margin: 0;
+    font-size: 2.75rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.summary-critical {
+    border-color: rgba(255, 77, 77, 0.26);
+}
+
+.summary-warning {
+    border-color: rgba(255, 183, 77, 0.26);
+}
+
+.summary-info {
+    border-color: rgba(118, 199, 255, 0.26);
+}
+
+.summary-devices {
+    border-color: rgba(119, 207, 113, 0.26);
+}
+
+.panel {
+    background: rgba(11, 14, 24, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.panel h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.recent-alert {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.recent-alert strong {
+    color: #e0e7ff;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+th, td {
+    padding: 16px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+th {
+    text-align: left;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #9da8bf;
+}
+
+tbody tr {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.015);
+}
+
+td {
+    color: #d8e0eb;
+    vertical-align: top;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.badge-critical {
+    background: rgba(255, 77, 77, 0.15);
+    color: #ff8a8a;
+}
+
+.badge-warning {
+    background: rgba(255, 183, 77, 0.12);
+    color: #ffd08e;
+}
+
+.badge-info {
+    background: rgba(118, 199, 255, 0.14);
+    color: #9fd3ff;
+}
+
+.panel-info {
+    background: rgba(20, 27, 53, 0.9);
+}
+
+@media (max-width: 860px) {
+    body {
+        padding: 16px;
+    }
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .table-wrapper {
+        min-width: 0;
+    }
+
+    table {
+        min-width: 0;
+    }
+}
+
+.empty-state {
+    text-align: center;
+    color: #9aa5bc;
+    padding: 28px 0;
+}
+
+.hardware-status {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+    color: #d4d9e8;
+}
+
+.hardware-status strong {
+    color: #fff;
+}

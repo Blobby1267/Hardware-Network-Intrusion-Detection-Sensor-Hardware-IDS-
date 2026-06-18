@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hardware IDS Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+    <div class="page-shell">
+        <header class="page-header">
+            <div>
+                <h1>Hardware IDS Dashboard</h1>
+                <p>Live event stream, hardware status, and threat summary.</p>
+            </div>
+            <div class="status-pill">
+                <span>Events captured:</span>
+                <strong>{{ summary.total_events }}</strong>
+            </div>
+        </header>
+
+        <section class="summary-grid">
+            <article class="summary-card summary-critical">
+                <h2>Critical Alerts</h2>
+                <p>{{ summary.critical }}</p>
+            </article>
+            <article class="summary-card summary-warning">
+                <h2>Warnings</h2>
+                <p>{{ summary.warning }}</p>
+            </article>
+            <article class="summary-card summary-info">
+                <h2>Informational</h2>
+                <p>{{ summary.info }}</p>
+            </article>
+            <article class="summary-card summary-devices">
+                <h2>Unique Sources</h2>
+                <p>{{ summary.unique_sources }}</p>
+            </article>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <h2>Latest event stream</h2>
+                {% if summary.last_alert %}
+                <div class="recent-alert">
+                    <strong>Last alert:</strong>
+                    <span>{{ summary.last_alert.timestamp }} — {{ summary.last_alert.event_type }} from {{ summary.last_alert.source }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Type</th>
+                            <th>Source</th>
+                            <th>Details</th>
+                            <th>Severity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if events %}
+                        {% for event in events %}
+                        <tr>
+                            <td>{{ event.timestamp }}</td>
+                            <td>{{ event.event_type }}</td>
+                            <td>{{ event.source }}</td>
+                            <td>{{ event.details }}</td>
+                            <td><span class="badge badge-{{ event.severity }}">{{ event.severity.upper() }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="empty-state">No IDS events found yet. Generate traffic or use a test event to verify detection.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel panel-info">
+            <h2>Hardware integration</h2>
+            <p>This IDS supports an optional I2C OLED display, GPIO status LEDs, and a buzzer for audible alerts. When hardware libraries are unavailable, the dashboard and logging still operate normally.</p>
+            <div class="hardware-status">
+                <span>OLED display: <strong>{{ 'Available' if hardware_status.oled else 'Unavailable' }}</strong></span>
+                <span>GPIO support: <strong>{{ 'Enabled' if hardware_status.gpio else 'Disabled' }}</strong></span>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

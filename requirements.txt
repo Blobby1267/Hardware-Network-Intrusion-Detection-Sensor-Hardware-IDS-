@@ -1,0 +1,6 @@
+Flask
+scapy
+Pillow
+luma.oled
+gpiozero
+RPi.GPIO
